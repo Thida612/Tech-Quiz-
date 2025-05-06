@@ -1,49 +1,107 @@
-describe('E2E Quiz Functionality', () => {
-  beforeEach(() => {
-    // Visit the application before each test
-    cy.visit('/'); // Adjust the URL as needed
+describe('tech quiz', () => {
+  context('Setup', () => {
+    it('should render the page and present a "Start Quiz" button to the user', () => {
+      cy.visit('/');
+      cy.get('[data-cy=start-screen]').should('be.visible');
+    });
   });
 
-  it('should start the quiz when the start button is clicked', () => {
-    cy.get('button.start-quiz').click(); // Adjust the selector to match your start button
-    cy.get('.question').should('exist'); // Check if the question element is displayed
+  context('Start Quiz', () => {
+    it('should progess to the quiz when the "Start Quiz" button is clicked', () => {
+      cy.visit('/');
+      cy.get('[data-cy=start-button]').click();
+      cy.get('[data-cy=quiz-question]').should('be.visible');
+    });
   });
 
-  it('should display the next question when an answer is selected', () => {
-    cy.get('button.start-quiz').click(); // Start the quiz
-    cy.get('input[type="radio"]').first().check(); // Select the first answer
-    cy.get('button.next-question').click(); // Click the next question button
-    cy.get('.question').should('exist'); // Ensure the next question is displayed
+  context('Answer a Question', () => {
+    beforeEach(() => {
+      cy.intercept({
+        method: 'GET',
+        url: '/api/questions/random'
+      },
+      {
+        fixture: 'questions.json',
+        statusCode: 200
+      }
+      ).as('fixtureQuestions');
+      cy.visit('/');
+    });
+    it('should display the next question when an answer is submitted', () => {
+      cy.visit('/');
+      cy.get('[data-cy=start-button]').click();
+      cy.get('[data-cy=quiz-question-content]').contains('question1');
+      cy.get('[data-cy=button-0]').click();
+      cy.get('[data-cy=quiz-question-content]').contains('question2');
+    });
   });
 
-  it('should show the score after all questions are answered', () => {
-    cy.get('button.start-quiz').click(); // Start the quiz
+  context('Answer All Questions', () => {
+    it('should display the score once 10 questions are answered', () => {
+      cy.visit('/');
+      cy.get('[data-cy=start-button]').click();
+      for (let question = 0; question < 10; question++) {
+        cy.get('[data-cy=button-0]').click();
+      };
+      cy.get('[data-cy=completion-screen]').should('be.visible');
+    });
+  });
 
-    // Loop through all questions (assuming you have a known number of questions)
-    cy.get('input[type="radio"]').each((radio) => {
-      cy.wrap(radio).check(); // Select each answer
-      cy.get('button.next-question').click(); // Click the next question button
+  context('Answer All Questions Correctly', () => {
+    beforeEach(() => {
+      cy.intercept({
+        method: 'GET',
+        url: '/api/questions/random'
+      },
+      {
+        fixture: 'questions.json',
+        statusCode: 200
+      }
+      ).as('fixtureQuestions');
+      cy.visit('/');
     });
 
-    // After the last question, check if the score is displayed
-    cy.get('.score').should('exist'); // Adjust the selector to match your score display
+    it('should display the score of 10/10 once 10 questions are answered correctly', () => {
+      cy.get('[data-cy=start-button]').click();
+      for (let question = 0; question < 10; question++) {
+        cy.get('[data-cy=button-0]').click();
+      };
+      cy.get('[data-cy=completion-screen]').should('contain', 'Your score: 10/10');
+    });
   });
 
-  it('should allow the user to start a new quiz after viewing the score', () => {
-    cy.get('button.start-quiz').click(); // Start the quiz
-
-    // Answer all questions as before
-    cy.get('input[type="radio"]').each((radio) => {
-      cy.wrap(radio).check();
-      cy.get('button.next-question').click();
+  context('Answer All Questions Incorrectly', () => {
+    beforeEach(() => {
+      cy.intercept({
+        method: 'GET',
+        url: '/api/questions/random'
+      },
+      {
+        fixture: 'questions.json',
+        statusCode: 200
+      }
+      ).as('fixtureQuestions');
+      cy.visit('/');
     });
 
-    // Check if the score is displayed
-    cy.get('.score').should('exist');
+    it('should display the score of 0/10 once 10 questions are answered incorrectly', () => {
+      cy.get('[data-cy=start-button]').click();
+      for (let question = 0; question < 10; question++) {
+        cy.get('[data-cy=button-1]').click();
+      };
+      cy.get('[data-cy=completion-screen]').should('contain', 'Your score: 0/10');
+    });
+  });
 
-    // Click the button to start a new quiz
-    cy.get('button.start-new-quiz').click(); // Adjust the selector
-    cy.get('button.start-quiz').should('exist'); // Ensure the start button is back
+  context('Start a New Quiz', () => {
+    it ('should take the user to a new quiz when the "Take New Quiz" button is pressed at the end of a quiz', () => {
+      cy.visit('/');
+      cy.get('[data-cy=start-button]').click();
+      for (let question = 0; question < 10; question++) {
+        cy.get('[data-cy=button-0]').click();
+      };
+      cy.get('[data-cy=quiz-complete]').click();
+      cy.get('[data-cy=quiz-question]').should('be.visible');
+    });
   });
 });
-
