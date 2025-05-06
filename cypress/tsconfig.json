@@ -6,10 +6,10 @@
       "types": ["cypress", "node", "@testing-library/cypress"],
       "isolatedModules": false,
       "noEmit": true,
-      "composite": true,
+      "composite": false,
       "jsx": "react-jsx",
-      "strict": true
+      "strict": true,
+      "allowImportingTsExtensions": true
     },
     "include": ["**/*.tsx", "**/*.ts", "**/*.js", "**/*.jsx"]
   }
-  
